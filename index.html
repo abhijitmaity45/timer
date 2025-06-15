@@ -155,16 +155,18 @@
   </div>
   <script>
     let totalSeconds = 0;
+    let endTime = 0;
     let interval;
     let paused = false;
-    let remainingSeconds = 0;
+    let pauseOffset = 0;
 
     function startTimer() {
       const hours = parseInt(document.getElementById('timeInput').value);
       if (isNaN(hours) || hours <= 0) return;
       totalSeconds = hours * 3600;
-      remainingSeconds = totalSeconds;
+      endTime = Date.now() + totalSeconds * 1000;
       paused = false;
+      pauseOffset = 0;
       updateDisplay();
       updateProgress();
       clearInterval(interval);
@@ -177,33 +179,34 @@
       if (!paused) {
         paused = true;
         clearInterval(interval);
+        pauseOffset = endTime - Date.now();
         button.textContent = "Resume";
       } else {
         paused = false;
+        endTime = Date.now() + pauseOffset;
         interval = setInterval(updateTimer, 1000);
         button.textContent = "Pause";
       }
     }
 
     function updateTimer() {
-      if (remainingSeconds <= 0) {
+      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+      if (remaining <= 0) {
         clearInterval(interval);
-        return;
       }
-      remainingSeconds--;
-      updateDisplay();
-      updateProgress();
+      updateDisplay(remaining);
+      updateProgress(remaining);
     }
 
-    function updateDisplay() {
-      const hours = Math.floor(remainingSeconds / 3600);
-      const minutes = Math.floor((remainingSeconds % 3600) / 60);
-      const seconds = remainingSeconds % 60;
+    function updateDisplay(remaining = totalSeconds) {
+      const hours = Math.floor(remaining / 3600);
+      const minutes = Math.floor((remaining % 3600) / 60);
+      const seconds = remaining % 60;
       document.getElementById('timeDisplay').textContent = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
     }
 
-    function updateProgress() {
-      const percentage = totalSeconds ? ((remainingSeconds / totalSeconds) * 100).toFixed(2) : 0;
+    function updateProgress(remaining = totalSeconds) {
+      const percentage = totalSeconds ? ((remaining / totalSeconds) * 100).toFixed(2) : 0;
       document.getElementById('progressCircle').style.background = `conic-gradient(var(--accent-color) ${percentage}%, #ddd ${percentage}%)`;
       document.getElementById('progressCircle').textContent = `${percentage}%`;
     }
