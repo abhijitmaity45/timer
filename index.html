@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Countdown Timer</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #ff758c, #ff7eb3, #8e44ad);
+      --text-color: #fff;
+      --card-bg: rgba(0, 0, 0, 0.6);
+      --accent-color: #00e676;
+      --shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .dark-theme {
+      --bg-gradient: linear-gradient(135deg, #232526, #414345);
+      --text-color: #eee;
+      --card-bg: rgba(255, 255, 255, 0.1);
+      --accent-color: #03dac6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text-color);
+      overflow-x: hidden;
+      height: 100%;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      background-size: 600% 600%;
+      animation: gradientBG 20s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .background-visuals {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    canvas#visualizer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .container {
+      background: var(--card-bg);
+      margin: 30px auto;
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      width: 95%;
+      max-width: 600px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    input, button, select {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px 5px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    input {
+      width: 140px;
+    }
+
+    button {
+      cursor: pointer;
+      background-color: var(--accent-color);
+      color: white;
+    }
+
+    .output {
+      margin-top: 20px;
+      font-size: 22px;
+    }
+
+    .circle {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: conic-gradient(var(--accent-color) 0%, #ddd 0%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 20px auto;
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--text-color);
+    }
+
+    .quote {
+      font-style: italic;
+      margin-top: 20px;
+      font-size: 18px;
+      opacity: 0.9;
+    }
+
+    .external-players, .custom-playlist {
+      margin-top: 30px;
+    }
+
+    .external-players iframe {
+      width: 100%;
+      height: 380px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="visualizer"></canvas>
+  <div class="background-visuals"></div>
+  <div class="container">
+    <h1>Countdown Timer</h1>
+    <input type="number" id="timeInput" placeholder="Enter hours" />
+    <button onclick="startTimer()">Start</button>
+    <button id="pauseResumeBtn" onclick="togglePauseResume()">Pause</button>
+    <button onclick="toggleTheme()">Toggle Theme</button>
+    <div class="circle" id="progressCircle">100%</div>
+    <div class="output" id="timeDisplay">00:00:00</div>
+    <div class="quote" id="quoteDisplay">"Push yourself, because no one else is going to do it for you."</div>
+    <div class="custom-playlist">
+      <input type="text" id="playlistUrl" placeholder="Enter Spotify playlist URL" />
+      <button onclick="updatePlaylist()">Set Playlist</button>
+    </div>
+    <div class="external-players" id="playlistContainer">
+      <iframe style="border: none;" src="https://open.spotify.com/embed/playlist/37i9dQZF1DX3rxVfibe1L0" allow="encrypted-media"></iframe>
+    </div>
+  </div>
+  <script>
+    let totalSeconds = 0;
+    let interval;
+    let paused = false;
+    let remainingSeconds = 0;
+
+    function startTimer() {
+      const hours = parseInt(document.getElementById('timeInput').value);
+      if (isNaN(hours) || hours <= 0) return;
+      totalSeconds = hours * 3600;
+      remainingSeconds = totalSeconds;
+      paused = false;
+      updateDisplay();
+      updateProgress();
+      clearInterval(interval);
+      interval = setInterval(updateTimer, 1000);
+      document.getElementById("pauseResumeBtn").textContent = "Pause";
+    }
+
+    function togglePauseResume() {
+      const button = document.getElementById("pauseResumeBtn");
+      if (!paused) {
+        paused = true;
+        clearInterval(interval);
+        button.textContent = "Resume";
+      } else {
+        paused = false;
+        interval = setInterval(updateTimer, 1000);
+        button.textContent = "Pause";
+      }
+    }
+
+    function updateTimer() {
+      if (remainingSeconds <= 0) {
+        clearInterval(interval);
+        return;
+      }
+      remainingSeconds--;
+      updateDisplay();
+      updateProgress();
+    }
+
+    function updateDisplay() {
+      const hours = Math.floor(remainingSeconds / 3600);
+      const minutes = Math.floor((remainingSeconds % 3600) / 60);
+      const seconds = remainingSeconds % 60;
+      document.getElementById('timeDisplay').textContent = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+    }
+
+    function updateProgress() {
+      const percentage = totalSeconds ? ((remainingSeconds / totalSeconds) * 100).toFixed(2) : 0;
+      document.getElementById('progressCircle').style.background = `conic-gradient(var(--accent-color) ${percentage}%, #ddd ${percentage}%)`;
+      document.getElementById('progressCircle').textContent = `${percentage}%`;
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark-theme');
+    }
+
+    function updatePlaylist() {
+      const url = document.getElementById('playlistUrl').value;
+      const iframeContainer = document.getElementById('playlistContainer');
+      const embedUrl = url.replace('/playlist/', '/embed/playlist/');
+      iframeContainer.innerHTML = `<iframe style="border: none;" src="${embedUrl}" allow="encrypted-media"></iframe>`;
+    }
+
+    window.onload = () => {
+      updateDisplay();
+      updateProgress();
+      setupVisualizer();
+    };
+
+    function setupVisualizer() {
+      const canvas = document.getElementById('visualizer');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      let analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      let bufferLength = analyser.frequencyBinCount;
+      let dataArray = new Uint8Array(bufferLength);
+
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        const source = audioCtx.createMediaStreamSource(stream);
+        source.connect(analyser);
+        animate();
+      }).catch(err => {
+        console.error("Audio input error:", err);
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.fillStyle = 'rgba(0,0,0,0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let barWidth = (canvas.width / bufferLength) * 2.5;
+        let x = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          let barHeight = dataArray[i];
+          let r = 250;
+          let g = 50 + barHeight;
+          let b = 200;
+
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          ctx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
+          x += barWidth + 1;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
